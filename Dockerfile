@@ -11,8 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Generar certificados SSL si no existen
-RUN if [ ! -f ssl/cert.pem ]; then python generate_ssl.py; fi
+RUN if [ ! -f ssl/cert.pem ]; then python3 generate_ssl.py; fi
 
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+CMD ["python3", "app.py"]

@@ -155,7 +155,7 @@ def generate_fallback_certificates():
     except ImportError:
         print("❌ Librería cryptography no disponible")
         print("💡 Instalando cryptography...")
-        subprocess.run([sys.executable, '-m', 'pip', 'install', 'cryptography'])
+        subprocess.run([sys.executable, '-m', 'pip3', 'install', 'cryptography'])
         return generate_fallback_certificates()
     except Exception as e:
         print(f"❌ Error generando certificados con Python: {e}")
