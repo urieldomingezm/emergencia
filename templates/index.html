@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Emergencia GPS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+        
+        .status {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .status.waiting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .emergency-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 1rem 0;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        .emergency-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+        
+        .emergency-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .location-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: left;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Sistema de Emergencia GPS</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Importante:</strong> Este botón enviará tu ubicación actual a tu contacto de emergencia por WhatsApp. Úsalo solo en situaciones reales de emergencia.
+        </div>
+        
+        <div id="status" class="status waiting">
+            Esperando ubicación...
+        </div>
+        
+        <div id="locationInfo" class="location-info" style="display: none;">
+            <strong>Tu ubicación actual:</strong><br>
+            <span id="coordinates"></span><br>
+            <span id="address"></span>
+        </div>
+        
+        <button id="emergencyBtn" class="emergency-btn" disabled>
+            🆘 ENVIAR ALERTA DE EMERGENCIA
+        </button>
+        
+        <div style="margin-top: 1rem;">
+            <label style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" id="autoMonitoring" style="transform: scale(1.2);">
+                <span style="font-size: 0.9rem; color: #333;">
+                    🛡️ Activar monitoreo automático (envía alerta si me desconecto)
+                </span>
+            </label>
+        </div>
+        
+        <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+            La aplicación necesita acceso a tu ubicación para funcionar correctamente.
+        </p>
+    </div>
+
+    <script>
+        let currentLocation = null;
+        
+        // Elementos del DOM
+        const statusDiv = document.getElementById('status');
+        const emergencyBtn = document.getElementById('emergencyBtn');
+        const locationInfo = document.getElementById('locationInfo');
+        const coordinates = document.getElementById('coordinates');
+        const address = document.getElementById('address');
+        
+        // Obtener ubicación al cargar la página
+        window.addEventListener('load', function() {
+            getLocation();
+        });
+        
+        function getLocation() {
+            if (navigator.geolocation) {
+                statusDiv.textContent = 'Obteniendo ubicación...';
+                statusDiv.className = 'status waiting';
+                
+                navigator.geolocation.getCurrentPosition(
+                    showPosition,
+                    showError,
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 60000
+                    }
+                );
+            } else {
+                showError({ code: 0, message: "Geolocalización no soportada por este navegador." });
+            }
+        }
+        
+        function showPosition(position) {
+            currentLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            
+            coordinates.textContent = `Lat: ${currentLocation.latitude.toFixed(6)}, Lon: ${currentLocation.longitude.toFixed(6)}`;
+            
+            // Mostrar información de ubicación
+            locationInfo.style.display = 'block';
+            
+            // Habilitar botón de emergencia
+            emergencyBtn.disabled = false;
+            statusDiv.textContent = '✅ Ubicación obtenida correctamente';
+            statusDiv.className = 'status success';
+            
+            // Obtener dirección (opcional)
+            getAddressFromCoordinates(currentLocation.latitude, currentLocation.longitude);
+        }
+        
+        function showError(error) {
+            let errorMessage = '';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = "Acceso a ubicación denegado por el usuario.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = "Información de ubicación no disponible.";
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = "Tiempo de espera agotado para obtener ubicación.";
+                    break;
+                default:
+                    errorMessage = "Error desconocido al obtener ubicación.";
+                    break;
+            }
+            
+            statusDiv.textContent = `❌ Error: ${errorMessage}`;
+            statusDiv.className = 'status error';
+        }
+        
+        function getAddressFromCoordinates(lat, lon) {
+            // Esta función es opcional y se ejecuta en segundo plano
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+                headers: {
+                    'User-Agent': 'EmergencyGPS/1.0'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.display_name) {
+                    address.textContent = `Dirección: ${data.display_name}`;
+                }
+            })
+            .catch(error => {
+                console.log('No se pudo obtener la dirección:', error);
+            });
+        }
+        
+        // Manejar click del botón de emergencia
+        emergencyBtn.addEventListener('click', function() {
+            if (!currentLocation) {
+                alert('No se ha obtenido la ubicación. Intenta recargar la página.');
+                return;
+            }
+            
+            if (confirm('¿Estás seguro de que quieres enviar una alerta de emergencia? Esto notificará a tu contacto de emergencia.')) {
+                sendEmergencyAlert();
+            }
+        });
+        
+        function sendEmergencyAlert() {
+            emergencyBtn.disabled = true;
+            emergencyBtn.textContent = 'Enviando alerta...';
+            statusDiv.textContent = 'Enviando alerta de emergencia...';
+            statusDiv.className = 'status waiting';
+            
+            fetch('/send_emergency_alert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...currentLocation,
+                    type: 'manual'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.textContent = '✅ Alerta enviada correctamente';
+                    statusDiv.className = 'status success';
+                    emergencyBtn.textContent = '✅ ALERTA ENVIADA';
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+            })
+            .catch(error => {
+                statusDiv.textContent = `❌ Error: ${error.message}`;
+                statusDiv.className = 'status error';
+                emergencyBtn.disabled = false;
+                emergencyBtn.textContent = '🆘 ENVIAR ALERTA DE EMERGENCIA';
+            });
+        }
+        
+        // Variables para monitoreo automático
+        let monitoringActive = false;
+        let heartbeatInterval = null;
+        
+        // Manejar checkbox de monitoreo automático
+        document.getElementById('autoMonitoring').addEventListener('change', function() {
+            if (this.checked) {
+                startAutoMonitoring();
+            } else {
+                stopAutoMonitoring();
+            }
+        });
+        
+        function startAutoMonitoring() {
+            if (!currentLocation) {
+                alert('Primero necesitas obtener tu ubicación');
+                document.getElementById('autoMonitoring').checked = false;
+                return;
+            }
+            
+            monitoringActive = true;
+            
+            // Notificar al servidor que inicie el monitoreo
+            fetch('/start_monitoring', { method: 'POST' });
+            
+            // Enviar heartbeat cada 30 segundos
+            heartbeatInterval = setInterval(function() {
+                if (currentLocation && monitoringActive) {
+                    fetch('/heartbeat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(currentLocation)
+                    }).catch(error => {
+                        console.log('Error enviando heartbeat:', error);
+                    });
+                }
+            }, 30000);
+            
+            // Actualizar status
+            statusDiv.textContent = '🛡️ Monitoreo automático activado';
+            statusDiv.className = 'status success';
+        }
+        
+        function stopAutoMonitoring() {
+            monitoringActive = false;
+            
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+            
+            // Notificar al servidor que detenga el monitoreo
+            fetch('/stop_monitoring', { method: 'POST' });
+            
+            // Actualizar status
+            statusDiv.textContent = '✅ Ubicación obtenida correctamente';
+            statusDiv.className = 'status success';
+        }
+        
+        // Actualizar ubicación cada 30 segundos
+        setInterval(function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        currentLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        };
+                        coordinates.textContent = `Lat: ${currentLocation.latitude.toFixed(6)}, Lon: ${currentLocation.longitude.toFixed(6)}`;
+                        
+                        // Actualizar dirección si cambió significativamente
+                        getAddressFromCoordinates(currentLocation.latitude, currentLocation.longitude);
+                    },
+                    function(error) {
+                        console.log('Error actualizando ubicación:', error);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+                );
+            }
+        }, 30000);
+        
+        // Detectar cuando la página se va a cerrar
+        window.addEventListener('beforeunload', function() {
+            if (monitoringActive) {
+                // Intentar notificar al servidor (puede no funcionar siempre)
+                navigator.sendBeacon('/stop_monitoring', '');
+            }
+        });
+    </script>
+</body>
+</html>

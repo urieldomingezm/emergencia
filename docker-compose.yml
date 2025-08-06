@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  emergency-gps:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    restart: unless-stopped
