@@ -201,4 +201,24 @@ if __name__ == '__main__':
     # Iniciar monitoreo de heartbeat
     monitor_heartbeat()
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Configurar HTTPS si los certificados existen
+    import ssl
+    ssl_context = None
+    
+    if os.path.exists('ssl/cert.pem') and os.path.exists('ssl/key.pem'):
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain('ssl/cert.pem', 'ssl/key.pem')
+        print("🔐 HTTPS habilitado - Certificados SSL encontrados")
+        print("🌐 Accede a: https://localhost:5000")
+        print("⚠️  Acepta la advertencia de seguridad en tu navegador")
+    else:
+        print("⚠️  Ejecutando en HTTP - Para HTTPS ejecuta: python generate_ssl.py")
+        print("🌐 Accede a: http://localhost:5000")
+        print("📱 IMPORTANTE: La geolocalización puede no funcionar en HTTP en algunos navegadores")
+    
+    app.run(
+        host='0.0.0.0', 
+        port=5000, 
+        debug=True,
+        ssl_context=ssl_context
+    )

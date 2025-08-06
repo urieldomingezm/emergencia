@@ -113,6 +113,10 @@
             <strong>⚠️ Importante:</strong> Este botón enviará tu ubicación actual a tu contacto de emergencia por WhatsApp. Úsalo solo en situaciones reales de emergencia.
         </div>
         
+        <div id="httpsWarning" class="warning" style="display: none; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+            <strong>🔒 Advertencia HTTPS:</strong> Para mejor funcionamiento de GPS, acepta el certificado de seguridad cuando tu navegador lo solicite.
+        </div>
+        
         <div id="status" class="status waiting">
             Esperando ubicación...
         </div>
@@ -154,6 +158,12 @@
         // Obtener ubicación al cargar la página
         window.addEventListener('load', function() {
             console.log('Página cargada, intentando obtener ubicación...');
+            
+            // Mostrar advertencia HTTPS si es necesario
+            if (location.protocol === 'https:' && location.hostname === 'localhost') {
+                document.getElementById('httpsWarning').style.display = 'block';
+            }
+            
             getLocation();
         });
 
@@ -200,22 +210,30 @@
         
         function showError(error) {
             let errorMessage = '';
+            let helpMessage = '';
+            
             switch(error.code) {
                 case error.PERMISSION_DENIED:
                     errorMessage = "Acceso a ubicación denegado por el usuario.";
+                    helpMessage = "💡 Permite el acceso a ubicación en tu navegador y recarga la página.";
                     break;
                 case error.POSITION_UNAVAILABLE:
                     errorMessage = "Información de ubicación no disponible.";
+                    helpMessage = "💡 Verifica que el GPS esté activado en tu dispositivo.";
                     break;
                 case error.TIMEOUT:
                     errorMessage = "Tiempo de espera agotado para obtener ubicación.";
+                    helpMessage = "💡 Intenta recargar la página o moverte a un lugar con mejor señal GPS.";
                     break;
                 default:
                     errorMessage = "Error desconocido al obtener ubicación.";
+                    if (location.protocol === 'http:') {
+                        helpMessage = "💡 Usa HTTPS para mejor compatibilidad con GPS. Ejecuta: python generate_ssl.py";
+                    }
                     break;
             }
             
-            statusDiv.textContent = `❌ Error: ${errorMessage}`;
+            statusDiv.innerHTML = `❌ Error: ${errorMessage}<br><small>${helpMessage}</small>`;
             statusDiv.className = 'status error';
         }
         

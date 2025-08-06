@@ -44,35 +44,62 @@ EMERGENCY_CONTACT=whatsapp:+521234567890
 
 ## 🚀 Instalación y ejecución
 
-### Opción 1: Con Docker (Recomendado)
+### Opción 1: Configuración automática con HTTPS (Recomendado)
 
+**En Windows:**
 ```bash
-# Construir la imagen
-docker build -t emergency-gps .
-
-# Ejecutar el contenedor
-docker run -p 5000:5000 emergency-gps
+# Ejecutar script automático
+setup_https.bat
 ```
 
-### Opción 2: Con Docker Compose
-
+**En Linux/Mac:**
 ```bash
-# Crear y ejecutar
+# Generar certificados SSL
+python generate_ssl.py
+
+# Ejecutar con Docker
 docker-compose up --build
 ```
 
+### Opción 2: Solo HTTP (puede fallar GPS en algunos navegadores)
+
+```bash
+# Ejecutar sin HTTPS
+docker-compose up --build
+```
+
+## 🔐 HTTPS y Geolocalización
+
+**¿Por qué HTTPS?**
+- Los navegadores modernos requieren HTTPS para acceder al GPS por seguridad
+- Sin HTTPS, la geolocalización puede fallar en Chrome, Safari y otros navegadores
+
+**Configuración automática:**
+- El sistema genera certificados SSL autofirmados automáticamente
+- Tu navegador mostrará una advertencia de seguridad (es normal)
+- Haz click en "Avanzado" → "Continuar a localhost" para aceptar el certificado
+
 ## 📱 Uso
 
-1. Abre tu navegador y ve a `http://localhost:5000`
-2. Permite el acceso a tu ubicación cuando el navegador lo solicite
-3. Espera a que se obtenga tu ubicación GPS
-4. En caso de emergencia, presiona el botón rojo "ENVIAR ALERTA DE EMERGENCIA"
-5. Confirma el envío en el diálogo que aparece
-6. El sistema enviará automáticamente un mensaje de WhatsApp con:
+1. **Abre tu navegador y ve a `https://localhost:5000`** (HTTPS importante para GPS)
+2. **Acepta el certificado de seguridad** cuando tu navegador lo solicite
+3. **Permite el acceso a tu ubicación** cuando el navegador lo solicite
+4. **Activa el monitoreo automático** (opcional) para detectar desconexiones
+5. **En caso de emergencia**, presiona el botón rojo "ENVIAR ALERTA DE EMERGENCIA"
+6. **Confirma el envío** en el diálogo que aparece
+7. El sistema enviará automáticamente un mensaje de WhatsApp con:
    - Fecha y hora actual
    - Tu ubicación exacta (coordenadas y dirección)
    - Enlace directo a Google Maps
    - Mensaje de alerta de emergencia
+
+## 🛡️ Monitoreo Automático
+
+**Nueva funcionalidad:**
+- Activa el checkbox "Activar monitoreo automático"
+- El sistema detecta si te desconectas inesperadamente
+- Envía alerta automática si no hay señal por más de 2 minutos
+- Funciona si se acaba la batería, pierdes internet, o cierras la app
 
 ## 📧 Ejemplo de mensaje de emergencia
 
