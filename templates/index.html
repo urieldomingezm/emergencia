@@ -153,14 +153,16 @@
         
         // Obtener ubicación al cargar la página
         window.addEventListener('load', function() {
+            console.log('Página cargada, intentando obtener ubicación...');
             getLocation();
         });
-        
+
         function getLocation() {
             if (navigator.geolocation) {
+                console.log('API de geolocalización disponible');
                 statusDiv.textContent = 'Obteniendo ubicación...';
                 statusDiv.className = 'status waiting';
-                
+
                 navigator.geolocation.getCurrentPosition(
                     showPosition,
                     showError,
@@ -171,6 +173,7 @@
                     }
                 );
             } else {
+                console.log('API de geolocalización NO disponible');
                 showError({ code: 0, message: "Geolocalización no soportada por este navegador." });
             }
         }
